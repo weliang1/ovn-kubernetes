@@ -304,7 +304,7 @@ func (o *FakeOVN) init(nadList []nettypes.NetworkAttachmentDefinition) {
 		o.addressSetManager,
 	)
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	o.controller.multicastSupport = config.EnableMulticast
+	o.controller.multicastSupport = config.OVNKubernetesFeature.EnableMulticast
 	o.eIPController.zone = o.controller.zone
 
 	setupCOPP := false

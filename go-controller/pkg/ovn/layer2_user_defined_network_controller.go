@@ -452,7 +452,7 @@ func NewLayer2UserDefinedNetworkController(
 
 	// enable multicast support for UDN only for primaries + multicast enabled
 	// TBD: changes needs to be made to support multicast beyond primary UDN
-	oc.multicastSupport = oc.IsPrimaryNetwork() && util.IsNetworkSegmentationSupportEnabled() && config.EnableMulticast
+	oc.multicastSupport = oc.IsPrimaryNetwork() && util.IsNetworkSegmentationSupportEnabled() && config.OVNKubernetesFeature.EnableMulticast
 
 	oc.initRetryFramework()
 	return oc, nil

@@ -275,7 +275,7 @@ func NewControllerManager(ovnClient *util.OVNClientset, wf *factory.WatchFactory
 		podRecorder:      &podRecorder,
 		portCache:        ovn.NewPortCache(stopCh),
 		wg:               wg,
-		multicastSupport: config.EnableMulticast,
+		multicastSupport: config.OVNKubernetesFeature.EnableMulticast,
 	}
 	var err error
 

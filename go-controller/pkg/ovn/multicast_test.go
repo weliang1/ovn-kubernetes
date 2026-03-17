@@ -364,7 +364,7 @@ var _ = Describe("OVN Multicast with IP Address Family", func() {
 	BeforeEach(func() {
 		// Restore global default values before each testcase
 		Expect(config.PrepareTestConfig()).To(Succeed())
-		config.EnableMulticast = true
+		config.OVNKubernetesFeature.EnableMulticast = true
 		config.OVNKubernetesFeature.EnableNetworkSegmentation = true
 		config.OVNKubernetesFeature.EnableMultiNetwork = true
 		config.OVNKubernetesFeature.EnableMultiNetworkPolicy = true
@@ -373,7 +373,7 @@ var _ = Describe("OVN Multicast with IP Address Family", func() {
 
 		app = cli.NewApp()
 		app.Name = "test"
-		// flags are written to config.EnableMulticast
+		// flags are written to config.OVNKubernetesFeature.EnableMulticast
 		// if there is no --enable-multicast flag, it will set to false.
 		// alternative approach is to give this flag to app.Run, but that require more changes.
 		//app.Flags = config.Flags

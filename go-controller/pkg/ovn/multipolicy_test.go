@@ -586,7 +586,7 @@ var _ = ginkgo.Describe("OVN MultiNetworkPolicy Operations", func() {
 
 					namespace1 := *ovntest.NewNamespace(namespaceName1)
 
-					config.EnableMulticast = false
+					config.OVNKubernetesFeature.EnableMulticast = false
 					startOvn(initialDB, watchNodes, []corev1.Node{node}, []corev1.Namespace{namespace1}, nil, nil,
 						[]nettypes.NetworkAttachmentDefinition{*nad}, []testPod{}, map[string]string{labelName: labelVal})
 

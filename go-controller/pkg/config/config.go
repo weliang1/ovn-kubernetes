@@ -225,9 +225,6 @@ var (
 	// UnprivilegedMode allows ovnkube-node to run without SYS_ADMIN capability, by performing interface setup in the CNI plugin
 	UnprivilegedMode bool
 
-	// EnableMulticast enables multicast support between the pods within the same namespace
-	EnableMulticast bool
-
 	// IPv4Mode captures whether we are using IPv4 for OVN logical topology. (ie, single-stack IPv4 or dual-stack)
 	IPv4Mode bool
 
@@ -505,6 +502,8 @@ type OVNKubernetesFeatureConfig struct {
 	EnableObservability             bool `gcfg:"enable-observability"`
 	EnableNetworkQoS                bool `gcfg:"enable-network-qos"`
 	AllowICMPNetworkPolicy          bool `gcfg:"allow-icmp-network-policy"`
+	// EnableMulticast enables multicast support between the pods within the same namespace
+	EnableMulticast bool `gcfg:"enable-multicast"`
 	// This feature requires a kernel fix https://github.com/torvalds/linux/commit/7f3287db654395f9c5ddd246325ff7889f550286
 	// to work on a kind cluster. Flag allows to disable it for current CI, will be turned on when github runners have this fix.
 	AdvertisedUDNIsolationMode string `gcfg:"advertised-udn-isolation-mode"`
@@ -799,7 +798,6 @@ func PrepareTestConfig() error {
 	NoOverlay = savedNoOverlay
 	ManagedBGP = savedManagedBGP
 	Kubernetes.DisableRequestedChassis = false
-	EnableMulticast = false
 	UnprivilegedMode = false
 	Default.OVSDBTxnTimeout = 5 * time.Second
 	if Gateway.Mode != GatewayModeDisabled {
@@ -1046,7 +1044,7 @@ var CommonFlags = []cli.Flag{
 	&cli.BoolFlag{
 		Name:        "enable-multicast",
 		Usage:       "Adds multicast support. Valid only with --init-master option.",
-		Destination: &EnableMulticast,
+		Destination: &cliConfig.OVNKubernetesFeature.EnableMulticast,
 	},
 	// Logging options
 	&cli.IntFlag{

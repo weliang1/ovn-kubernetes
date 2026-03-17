@@ -561,7 +561,7 @@ var _ = Describe("OVN Kubevirt Operations", func() {
 		app.Flags = config.Flags
 
 		// To skip port group not found error
-		config.EnableMulticast = false
+		config.OVNKubernetesFeature.EnableMulticast = false
 		config.Gateway.DisableSNATMultipleGWs = true
 
 		fakeOvn = NewFakeOVN(true)

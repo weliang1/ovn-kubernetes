@@ -4,6 +4,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -1073,6 +1074,41 @@ func (c *Controller) updatedNodeInfoMapForNetwork(state *networkState, nodeName 
 	return nodeInfoByName, true
 }
 
+// serviceHasPodsWithOpenDefaultPorts checks if any pods backing the service have the
+// k8s.ovn.org/open-default-ports annotation. This is used to determine if a UDN service
+// should be programmed on the default network to enable cross-network service access.
+func (c *Controller) serviceHasPodsWithOpenDefaultPorts(namespace, name, networkName string) bool {
+	// Get endpoint slices for this service from the service's network
+	endpointSlices, err := util.GetServiceEndpointSlices(namespace, name, networkName, c.endpointSliceLister)
+	if err != nil {
+		klog.V(5).Infof("Failed to get endpoint slices for service %s/%s on network %s: %v", namespace, name, networkName, err)
+		return false
+	}
+
+	// Check if any endpoint pod has the open-default-ports annotation
+	for _, endpointSlice := range endpointSlices {
+		for _, endpoint := range endpointSlice.Endpoints {
+			if endpoint.TargetRef == nil || endpoint.TargetRef.Kind != "Pod" {
+				continue
+			}
+			// Fetch the pod to check its annotations
+			pod, err := c.client.CoreV1().Pods(namespace).Get(context.TODO(), endpoint.TargetRef.Name, metav1.GetOptions{})
+			if err != nil {
+				if !apierrors.IsNotFound(err) {
+					klog.V(5).Infof("Failed to get pod %s/%s: %v", namespace, endpoint.TargetRef.Name, err)
+				}
+				continue
+			}
+			// Check if the pod has the open-default-ports annotation
+			if _, ok := pod.Annotations[util.UDNOpenPortsAnnotationName]; ok {
+				klog.V(4).Infof("Pod %s/%s has open-default-ports annotation", namespace, pod.Name)
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (c *Controller) skipServiceForNetwork(state *networkState, name, namespace string) bool {
 	if util.IsNetworkSegmentationSupportEnabled() {
 		serviceNAD, err := c.networkManager.GetPrimaryNADForNamespace(namespace)
@@ -1106,6 +1142,16 @@ func (c *Controller) skipServiceForNetwork(state *networkState, name, namespace 
 		}
 
 		if serviceNetworkName != state.netInfo.GetNetworkName() {
+			// Special case: if this is the default network controller processing a UDN service,
+			// check if any backing pods have the open-default-ports annotation. If they do,
+			// we should NOT skip this service - it needs to be programmed on the default network
+			// to enable cross-network service access.
+			if state.netInfo.GetNetworkName() == types.DefaultNetworkName &&
+				!isDefaultNetwork &&
+				c.serviceHasPodsWithOpenDefaultPorts(namespace, name, serviceNetworkName) {
+				klog.V(4).Infof("Service %s/%s is in UDN network %s but has pods with open-default-ports, programming on default network", namespace, name, serviceNetworkName)
+				return false
+			}
 			return true
 		}
 	}
